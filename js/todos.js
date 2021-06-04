@@ -1,12 +1,23 @@
+window.todoStore = {
+	todos: JSON.parse(localStorage.getItem('todo-store') || '[]'),
+
+	save() {
+		localStorage.setItem('todo-store', JSON.stringify(this.todos));
+	}
+};
+
+//construction function
+window.Todo = function (body) {
+	this.id = Date.now();
+	this.body = body;
+	this.completed = false;
+}
+
 window.todos = function () {
 	return {
-
+		...todoStore,
 		filter: 'all',
-
-		todos: [],
-
 		editedTodo : null,
-
 		newTodo: '',
 
 		get active() {
@@ -25,12 +36,17 @@ window.todos = function () {
 			}[this.filter];
 		},
 
+		get allComplete() {
+			return this.todos.length === this.completed.length;
+		},
+
 		addTodo() {
-			this.todos.push({
-				id: this.todos.length + 1,
-				body: this.newTodo,
-				completed: false
-			});
+			if (! this.newTodo) return;
+
+			this.todos.push(new Todo(this.newTodo));
+
+			this.save();
+
 			this.newTodo = ''
 		},
 
@@ -38,6 +54,8 @@ window.todos = function () {
 			let position = this.todos.indexOf(todo);
 
 			this.todos.splice(position, 1);
+
+			this.save();
 		},
 
 		editTodo(todo) {
@@ -49,7 +67,10 @@ window.todos = function () {
 			if (todo.body.trim() === '') {
 				return this.deleteTodo(todo);
 			}
+
 			this.editedTodo = null;
+
+			this.save();
 		},
 
 		cancelEdit(todo) {
@@ -59,6 +80,26 @@ window.todos = function () {
 
 			delete todo.cachedBody;
 
+		},
+
+		toggleCompletion(todo) {
+			todo.completed = !todo.completed
+
+			this.save();
+		},
+
+		toggleAllComplete() {
+			let allComplete = this.allComplete;
+
+			this.todos.forEach(todo => todo.completed = ! allComplete);
+
+			this.save();
+		},
+
+		clearCompletedTodos() {
+			this.todos = this.active;
+
+			this.save();
 		}
 
 	}
